@@ -50,7 +50,9 @@ export async function addToWishlist(userId: string, productId: string) {
     }
 
     const payload = await verifyJwt(token)
-    if (!payload || payload["x-hasura-user-id"] !== userId) {
+    const claims = payload?.["https://hasura.io/jwt/claims"]
+
+    if (!claims || claims["x-hasura-user-id"] !== userId) {
       return {
         success: false,
         error: "Unauthorized",

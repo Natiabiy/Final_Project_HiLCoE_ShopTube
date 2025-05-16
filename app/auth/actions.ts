@@ -21,7 +21,6 @@ export async function loginUser(formData: FormData) {
 
     // Get user from database
     const { users } = await adminClient.request(GET_USER_BY_EMAIL, { email })
-
     if (users.length === 0) {
       return { success: false, error: "Invalid email or password" }
     }
@@ -36,9 +35,7 @@ export async function loginUser(formData: FormData) {
 
     // Check if seller is approved
     if (user.role === "seller") {
-      // Get seller profile to check approval status
       const { seller_profiles } = await adminClient.request(GET_SELLER_PROFILE, { userId: user.id })
-
       if (seller_profiles.length === 0 || !seller_profiles[0].is_approved) {
         return {
           success: false,
@@ -56,17 +53,15 @@ export async function loginUser(formData: FormData) {
       ...createHasuraClaims(user),
     }
 
-    // Generate JWT token
-    const token = await generateToken(tokenPayload)
+    const token = await generateToken(user)
 
-    // Set cookie for server-side auth
     cookies().set({
       name: "auth-token",
       value: token,
       httpOnly: true,
       path: "/",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24,
     })
 
     return {
@@ -98,16 +93,13 @@ export async function signupUser(formData: FormData) {
       return { success: false, error: "All fields are required" }
     }
 
-    // Check if user already exists
     const { users } = await adminClient.request(GET_USER_BY_EMAIL, { email })
     if (users.length > 0) {
       return { success: false, error: "Email already in use" }
     }
 
-    // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Create user
     const { insert_users_one } = await adminClient.request(CREATE_USER, {
       name,
       email,
@@ -117,7 +109,6 @@ export async function signupUser(formData: FormData) {
 
     const user = insert_users_one
 
-    // If role is seller, create seller profile
     if (role === "seller" && businessName) {
       await adminClient.request(CREATE_SELLER_PROFILE, {
         userId: user.id,
@@ -126,28 +117,28 @@ export async function signupUser(formData: FormData) {
       })
     }
 
-    // Create JWT payload with Hasura claims
-    const tokenPayload = {
-      sub: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      ...createHasuraClaims(user),
-    }
-
-    // Generate JWT token
-    const token = await generateToken(tokenPayload)
-
-    // Set cookie for server-side auth - but only if not a seller or if seller is already approved
+    // Only create token if user is not a seller
+    let token: string | null = null
     if (role !== "seller") {
-      cookies().set({
+      const tokenPayload = {
+        sub: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        ...createHasuraClaims(user),
+      }
+
+      token = await generateToken(user)
+
+      const cookieStore = await cookies();
+      cookieStore.set({
         name: "auth-token",
         value: token,
         httpOnly: true,
         path: "/",
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24, // 1 day
-      })
+      });
     }
 
     return {
@@ -158,7 +149,7 @@ export async function signupUser(formData: FormData) {
         email: user.email,
         role: user.role,
       },
-      token: role !== "seller" ? token : null,
+      token,
       message:
         role === "seller"
           ? "Your seller application has been submitted for review. You'll be notified once it's approved."

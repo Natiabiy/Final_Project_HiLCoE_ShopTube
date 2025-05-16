@@ -2,7 +2,9 @@ import { jwtVerify, SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 
 // ✅ JWT secret key (make sure this matches Hasura config exactly)
-const RAW_SECRET = process.env.JWT_SECRET || "d8ad59547a38696304279bf3bdddc60f230235e36585e55b5197a89ee3255c271f0451643653db15bd08cc1795bd25e27faea7ac39df06e4ae3351342e70bc4e";
+const RAW_SECRET =
+  process.env.JWT_SECRET ||
+  "d8ad59547a38696304279bf3bdddc60f230235e36585e55b5197a89ee3255c271f0451643653db15bd08cc1795bd25e27faea7ac39df06e4ae3351342e70bc4e";
 const JWT_SECRET = new TextEncoder().encode(RAW_SECRET);
 
 // ✅ Hash a password
@@ -20,14 +22,21 @@ export async function verifyPassword(
 
 // ✅ Create Hasura-compatible JWT claims
 export function createHasuraClaims(user: any) {
+  if (!user?.id || !user?.role) {
+    console.error("createHasuraClaims() error - passed object:", user);
+    throw new Error("Missing user ID or role for Hasura claims.");
+  }
+
   return {
     "https://hasura.io/jwt/claims": {
       "x-hasura-allowed-roles": [user.role],
       "x-hasura-default-role": user.role,
-      "x-hasura-user-id": user.id.toString(), // Ensure it's a string
+      "x-hasura-user-id": String(user.id),
     },
-  };
+  }
 }
+
+
 
 // ✅ Generate JWT token
 export async function generateToken(user: any): Promise<string> {
@@ -62,11 +71,38 @@ export async function verifyJwt(token: string) {
   if (!token) return null;
 
   try {
-    // ❌ BUG FIXED: You were using a string literal "JWT_SECRET" instead of the actual secret value
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
   } catch (error) {
     console.error("JWT verification error:", error);
     return null;
   }
+}
+
+//
+// ✅ LOCAL TESTING BLOCK
+//
+if (require.main === module) {
+  (async () => {
+    console.log("🔧 Running local tests...");
+
+    const testPassword = "mysecret123";
+    const user = { id: 1, role: "user" };
+
+    // Hash
+    const hashed = await hashPassword(testPassword);
+    console.log("🔐 Hashed Password:", hashed);
+
+    // Verify
+    const isMatch = await verifyPassword(testPassword, hashed);
+    console.log("✅ Password Match:", isMatch);
+
+    // Generate JWT
+    const token = await generateToken(user);
+    console.log("🪙 Generated JWT:", token);
+
+    // Verify JWT
+    const decoded = await verifyToken(token);
+    console.log("📜 Decoded JWT Payload:", decoded);
+  })();
 }

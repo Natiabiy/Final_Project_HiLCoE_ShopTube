@@ -10,12 +10,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: "User ID is required" }, { status: 400 })
   }
 
-  // Get token from Authorization header instead of cookie
   const authHeader = request.headers.get("Authorization")
   const token = authHeader ? authHeader.replace("Bearer ", "") : null
 
   if (!token) {
-    // Return empty wishlist for unauthenticated users instead of error
     return NextResponse.json({
       success: true,
       wishlistItems: [],
@@ -23,11 +21,10 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Use verifyToken from auth.ts
   const payload = await verifyToken(token)
+  const userIdFromToken = payload?.["https://hasura.io/jwt/claims"]?.["x-hasura-user-id"]
 
-  if (!payload || payload.sub !== userId) {
-    // Return empty wishlist for unauthorized users instead of error
+  if (!userIdFromToken || userIdFromToken !== userId) {
     return NextResponse.json({
       success: true,
       wishlistItems: [],
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "User ID and Product ID are required" }, { status: 400 })
   }
 
-  // Get token from Authorization header instead of cookie
   const authHeader = request.headers.get("Authorization")
   const token = authHeader ? authHeader.replace("Bearer ", "") : null
 
@@ -60,10 +56,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 })
   }
 
-  // Use verifyToken from auth.ts
   const payload = await verifyToken(token)
+  const userIdFromToken = payload?.["https://hasura.io/jwt/claims"]?.["x-hasura-user-id"]
 
-  if (!payload || payload.sub !== userId) {
+  if (!userIdFromToken || userIdFromToken !== userId) {
+    const payload = await verifyToken(token)
+console.log("Decoded token payload:", payload)
+
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 })
   }
 

@@ -676,3 +676,29 @@ export const GET_ORDER_BY_ID = gql`
     }
   }
 `
+
+// export const GET_USER_WISHLIST = gql`
+//   query GetUserWishlist($userId: uuid!) {
+//     wishlists(where: {customer_id: {_eq: $userId}}) {
+//       id
+//       product_id
+//       created_at
+//     }
+//   }
+// `
+
+// export const ADD_TO_WISHLIST = gql`
+//   mutation AddToWishlist($userId: uuid!, $productId: uuid!) {
+//     insert_wishlists_one(object: {customer_id: $userId, product_id: $productId}) {
+//       id
+//     }
+//   }
+// `
+
+// export const REMOVE_FROM_WISHLIST = gql`
+//   mutation RemoveFromWishlist($wishlistItemId: uuid!) {
+//     delete_wishlists_by_pk(id: $wishlistItemId) {
+//       id
+//     }
+//   }
+// `

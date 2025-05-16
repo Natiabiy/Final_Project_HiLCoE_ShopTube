@@ -7,19 +7,24 @@ import {
   REMOVE_FROM_WISHLIST,
   GET_USER_WISHLIST,
 } from "@/lib/graphql-client"
-import { cookies } from "next/headers"
+import { headers } from "next/headers"
 import { verifyJwt } from "@/lib/auth"
+
+function getTokenFromHeader(): string | null {
+  const headerList = headers()
+  const authHeader = headerList.get("authorization")
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1]
+  }
+  return null
+}
 
 export async function getUserWishlist(userId: string) {
   try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth_token")?.value
-
+    const token = getTokenFromHeader()
     const client = token ? createAuthClient(token) : adminClient
 
-    const { wishlist_items } = await client.request(GET_USER_WISHLIST, {
-      userId,
-    })
+    const { wishlist_items } = await client.request(GET_USER_WISHLIST, { userId })
 
     return {
       success: true,
@@ -36,9 +41,7 @@ export async function getUserWishlist(userId: string) {
 
 export async function addToWishlist(userId: string, productId: string) {
   try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth_token")?.value
-
+    const token = getTokenFromHeader()
     if (!token) {
       return {
         success: false,
@@ -46,9 +49,8 @@ export async function addToWishlist(userId: string, productId: string) {
       }
     }
 
-    // Verify the token
     const payload = await verifyJwt(token)
-    if (!payload || payload.userId !== userId) {
+    if (!payload || payload["x-hasura-user-id"] !== userId) {
       return {
         success: false,
         error: "Unauthorized",
@@ -77,9 +79,7 @@ export async function addToWishlist(userId: string, productId: string) {
 
 export async function removeFromWishlist(wishlistItemId: string) {
   try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth_token")?.value
-
+    const token = getTokenFromHeader()
     if (!token) {
       return {
         success: false,
@@ -102,29 +102,6 @@ export async function removeFromWishlist(wishlistItemId: string) {
     return {
       success: false,
       error: "Failed to remove item from wishlist",
-    }
-  }
-}
-
-export async function getCustomerSubscriptions(userId: string) {
-  try {
-    const cookieStore = cookies()
-    const token = cookieStore.get("auth_token")?.value
-
-    const client = token ? createAuthClient(token) : adminClient
-
-    // This is a placeholder for the actual subscription query
-    // You would need to implement the actual query based on your schema
-
-    return {
-      success: true,
-      subscriptions: [],
-    }
-  } catch (error) {
-    console.error("Error fetching subscriptions:", error)
-    return {
-      success: false,
-      error: "Failed to fetch subscriptions",
     }
   }
 }

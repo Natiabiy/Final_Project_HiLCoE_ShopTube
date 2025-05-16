@@ -28,7 +28,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 })
   }
 
-  const result = await removeFromWishlist(userId, productId)
+  const result = await removeFromWishlist(userId)
 
   if (result.success) {
     return NextResponse.json(result)

@@ -133,6 +133,8 @@ export function useWishlist() {
     }
   }
 
+  
+
   // Remove a product from the wishlist
   const removeFromWishlist = async (productId: string): Promise<boolean> => {
     if (!user || !token) return false

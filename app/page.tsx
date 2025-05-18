@@ -43,7 +43,7 @@ export default function Home() {
                 <img
                   alt="ShopTube Platform"
                   className="aspect-video overflow-hidden rounded-xl object-cover object-center"
-                  src="/placeholder.svg?height=550&width=750"
+                  src="/Shop_Hero.jpg?height=550&width=750"
                 />
               </div>
             </div>

@@ -26,7 +26,7 @@ type CartItem = {
     seller: {
       id: string
       name: string
-      seller_profile: {
+      seller_profiles: {
         business_name: string | null
       }
     }
@@ -224,7 +224,7 @@ export default function CustomerCartPage() {
                             <p className="text-sm text-muted-foreground">
                               Sold by:{" "}
                               <Link href={`/shop/${item.product.seller.id}`} className="hover:underline">
-                                {item.product.seller.seller_profile.business_name || item.product.seller.name}
+                                {item.product.seller.seller_profiles.business_name || item.product.seller.name}
                               </Link>
                             </p>
                             <p className="text-sm text-muted-foreground">

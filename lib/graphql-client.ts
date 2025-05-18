@@ -581,21 +581,45 @@ export const CHECK_USER_SUBSCRIBED = gql`
   }
 `
 
+// export const GET_USER_CART = gql`
+//   query GetUserCart($userId: uuid!) {
+//     cart_items(where: {customer_id: {_eq: $userId}}) {
+//       id
+//       quantity
+//       product {
+//         id
+//         name
+//         price
+//         stock
+//         image_url
+//       }
+//     }
+//   }
+// `
+
 export const GET_USER_CART = gql`
-  query GetUserCart($userId: uuid!) {
-    cart_items(where: {customer_id: {_eq: $userId}}) {
+query GetUserCart($userId: uuid!) {
+  cart_items(where: { customer_id: { _eq: $userId } }) {
+    id
+    quantity
+    product {
       id
-      quantity
-      product {
+      name
+      price
+      stock
+      image_url
+       seller{
         id
         name
-        price
-        stock
-        image_url
+        seller_profiles {
+          business_name
+        }
       }
     }
   }
+}
 `
+
 
 export const ADD_TO_CART = gql`
   mutation AddToCart($userId: uuid!, $productId: uuid!, $quantity: Int!) {

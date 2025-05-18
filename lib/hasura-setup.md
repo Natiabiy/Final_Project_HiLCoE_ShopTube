@@ -119,6 +119,34 @@ CREATE INDEX idx_wishlists_customer_id ON wishlists(customer_id);
 CREATE INDEX idx_wishlists_product_id ON wishlists(product_id);
 \`\`\`
 
+-- Cart Items Table (new)
+CREATE TABLE cart_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(customer_id, product_id)
+);
+
+CREATE INDEX idx_cart_items_customer_id ON cart_items(customer_id);
+CREATE INDEX idx_cart_items_product_id ON cart_items(product_id);
+
+-- Ensure the update_timestamp function exists (used by all tables)
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_cart_items_timestamp
+  BEFORE UPDATE ON cart_items
+  FOR EACH ROW
+  EXECUTE FUNCTION update_timestamp();
+
 ## 3. Setting Up Relationships in Hasura
 
 After creating the tables, set up the following relationships in the Hasura console:

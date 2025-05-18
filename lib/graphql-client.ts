@@ -1,5 +1,7 @@
 import { GraphQLClient, gql } from "graphql-request"
 
+
+
 // Re-export gql for use in other files
 export { gql }
 

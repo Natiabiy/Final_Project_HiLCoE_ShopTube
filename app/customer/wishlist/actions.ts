@@ -10,8 +10,8 @@ import {
 import { headers } from "next/headers"
 import { verifyJwt } from "@/lib/auth"
 
-function getTokenFromHeader(): string | null {
-  const headerList = headers()
+async function getTokenFromHeader(): Promise<string | null> {
+  const headerList = await headers()
   const authHeader = headerList.get("authorization")
   if (authHeader && authHeader.startsWith("Bearer ")) {
     return authHeader.split(" ")[1]
@@ -21,7 +21,7 @@ function getTokenFromHeader(): string | null {
 
 export async function getUserWishlist(userId: string) {
   try {
-    const token = getTokenFromHeader()
+    const token = await getTokenFromHeader()
     const client = token ? createAuthClient(token) : adminClient
 
     const { wishlist_items } = await client.request(GET_USER_WISHLIST, { userId })
@@ -41,7 +41,7 @@ export async function getUserWishlist(userId: string) {
 
 export async function addToWishlist(userId: string, productId: string) {
   try {
-    const token = getTokenFromHeader()
+    const token = await getTokenFromHeader()
     if (!token) {
       return {
         success: false,
@@ -50,7 +50,9 @@ export async function addToWishlist(userId: string, productId: string) {
     }
 
     const payload = await verifyJwt(token)
-    const claims = payload?.["https://hasura.io/jwt/claims"]
+    const claims = payload?.["https://hasura.io/jwt/claims"] as {
+      "x-hasura-user-id": string
+    }
 
     if (!claims || claims["x-hasura-user-id"] !== userId) {
       return {
@@ -81,7 +83,7 @@ export async function addToWishlist(userId: string, productId: string) {
 
 export async function removeFromWishlist(wishlistItemId: string) {
   try {
-    const token = getTokenFromHeader()
+    const token = await getTokenFromHeader()
     if (!token) {
       return {
         success: false,

@@ -648,13 +648,23 @@ export const ADD_TO_WISHLIST = gql`
   }
 `
 
+// export const REMOVE_FROM_WISHLIST = gql`
+//   mutation RemoveFromWishlist($wishlistItemId: uuid!) {
+//     delete_wishlist_items_by_pk(id: $wishlistItemId) {
+//       id
+//     }
+//   }
+// `
 export const REMOVE_FROM_WISHLIST = gql`
-  mutation RemoveFromWishlist($wishlistItemId: uuid!) {
-    delete_wishlist_items_by_pk(id: $wishlistItemId) {
-      id
+  mutation RemoveFromWishlist($wishlistItemId: uuid!, $customerId: uuid!) {
+    delete_wishlist_items(
+      where: { id: { _eq: $wishlistItemId }, customer_id: { _eq: $customerId } }
+    ) {
+      affected_rows
     }
   }
 `
+
 
 // Add this query to your existing GraphQL client file
 export const GET_ORDER_BY_ID = gql`

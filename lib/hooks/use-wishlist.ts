@@ -14,59 +14,66 @@ interface WishlistItem {
 export function useWishlist() {
   const { user, token } = useAuth()
   const { toast } = useToast()
+
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  // Fetch wishlist items when user changes
-  useEffect(() => {
-    async function fetchWishlist() {
-      if (!user) {
-        setWishlistItems([])
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        const response = await fetch(`/api/wishlist?userId=${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error(`Error fetching wishlist: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-
-        if (data.success) {
-          setWishlistItems(data.wishlistItems || [])
-        } else {
-          setError(data.error || "Failed to fetch wishlist")
-          setWishlistItems([])
-        }
-      } catch (err) {
-        console.error("Error fetching wishlist:", err)
-        setError(err instanceof Error ? err.message : "An unknown error occurred")
-        setWishlistItems([])
-      } finally {
-        setLoading(false)
-      }
+  // Function to fetch wishlist items
+  const fetchWishlist = async () => {
+    if (!user?.id || !token) {
+      setWishlistItems([])
+      setLoading(false)
+      return
     }
 
-    fetchWishlist()
-  }, [user, token])
+    setLoading(true)
+    setError(null)
 
-  // Check if a product is in the wishlist
+    try {
+      const response = await fetch(`/api/wishlist?userId=${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error fetching wishlist: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setWishlistItems(data.wishlistItems || [])
+      } else {
+        setError(data.error || "Failed to fetch wishlist")
+        setWishlistItems([])
+      }
+    } catch (err) {
+      console.error("Error fetching wishlist:", err)
+      setError(err instanceof Error ? err.message : "An unknown error occurred")
+      setWishlistItems([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch wishlist only when user.id or token changes
+  useEffect(() => {
+    console.log("useWishlist useEffect triggered with user.id:", user?.id, "token:", token)
+    if (!user?.id || !token) {
+      setWishlistItems([])
+      setLoading(false)
+      return
+    }
+    fetchWishlist()
+  }, [user?.id, token])
+
   const isInWishlist = (productId: string): boolean => {
     return wishlistItems.some((item) => item.product_id === productId)
   }
 
-  // Add a product to the wishlist
   const addToWishlist = async (productId: string): Promise<boolean> => {
     if (!user || !token) {
       toast({
@@ -76,6 +83,8 @@ export function useWishlist() {
       })
       return false
     }
+
+    setActionLoading(true)
 
     try {
       const response = await fetch("/api/wishlist", {
@@ -97,7 +106,6 @@ export function useWishlist() {
       const data = await response.json()
 
       if (data.success) {
-        // Update local state
         setWishlistItems((prev) => [
           ...prev,
           {
@@ -130,17 +138,28 @@ export function useWishlist() {
         variant: "destructive",
       })
       return false
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  
-
-  // Remove a product from the wishlist
   const removeFromWishlist = async (productId: string): Promise<boolean> => {
     if (!user || !token) return false
 
+    const wishlistItem = wishlistItems.find((item) => item.product_id === productId)
+    if (!wishlistItem) {
+      toast({
+        title: "Error",
+        description: "Item not found in wishlist",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    setActionLoading(true)
+
     try {
-      const response = await fetch(`/api/wishlist/${productId}`, {
+      const response = await fetch(`/api/wishlist/${wishlistItem.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -154,8 +173,9 @@ export function useWishlist() {
       const data = await response.json()
 
       if (data.success) {
-        // Update local state
-        setWishlistItems((prev) => prev.filter((item) => item.product_id !== productId))
+        setWishlistItems((prev) =>
+          prev.filter((item) => item.product_id !== productId)
+        )
         toast({
           title: "Removed from wishlist",
           description: "Item has been removed from your wishlist",
@@ -179,22 +199,26 @@ export function useWishlist() {
         variant: "destructive",
       })
       return false
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  // Toggle a product in the wishlist
   const toggleWishlist = async (productId: string): Promise<boolean> => {
-    return isInWishlist(productId) ? await removeFromWishlist(productId) : await addToWishlist(productId)
+    return isInWishlist(productId)
+      ? await removeFromWishlist(productId)
+      : await addToWishlist(productId)
   }
 
   return {
     wishlistItems,
     loading,
+    actionLoading,
     error,
     isInWishlist,
     addToWishlist,
     removeFromWishlist,
     toggleWishlist,
-    refreshWishlist: () => {},
+    refreshWishlist: fetchWishlist,
   }
 }

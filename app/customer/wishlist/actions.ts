@@ -81,7 +81,36 @@ export async function addToWishlist(userId: string, productId: string) {
   }
 }
 
-export async function removeFromWishlist(wishlistItemId: string) {
+// export async function removeFromWishlist(wishlistItemId: string) {
+//   try {
+//     const token = await getTokenFromHeader()
+//     if (!token) {
+//       return {
+//         success: false,
+//         error: "Authentication required",
+//       }
+//     }
+
+//     const client = createAuthClient(token)
+
+//     const { delete_wishlist_items_by_pk } = await client.request(REMOVE_FROM_WISHLIST, {
+//       wishlistItemId,
+//     })
+
+//     return {
+//       success: true,
+//       removedItem: delete_wishlist_items_by_pk,
+//     }
+//   } catch (error) {
+//     console.error("Error removing from wishlist:", error)
+//     return {
+//       success: false,
+//       error: "Failed to remove item from wishlist",
+//     }
+//   }
+// }
+
+export async function removeFromWishlist(wishlistItemId: string, customerId: string) {
   try {
     const token = await getTokenFromHeader()
     if (!token) {
@@ -93,13 +122,20 @@ export async function removeFromWishlist(wishlistItemId: string) {
 
     const client = createAuthClient(token)
 
-    const { delete_wishlist_items_by_pk } = await client.request(REMOVE_FROM_WISHLIST, {
+    const { delete_wishlist_items } = await client.request(REMOVE_FROM_WISHLIST, {
       wishlistItemId,
+      customerId,
     })
 
-    return {
-      success: true,
-      removedItem: delete_wishlist_items_by_pk,
+    if (delete_wishlist_items.affected_rows > 0) {
+      return {
+        success: true,
+      }
+    } else {
+      return {
+        success: false,
+        error: "Item not found or does not belong to this user",
+      }
     }
   } catch (error) {
     console.error("Error removing from wishlist:", error)

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useEffect, useState } from "react"
+import { createContext, useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { jwtDecode } from "jwt-decode"
 import { loginUser, signupUser, logoutUser } from "@/app/auth/actions"
@@ -38,23 +38,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in
     const checkAuth = async () => {
       try {
         const storedToken = localStorage.getItem("shoptube-token")
         if (storedToken) {
-          // Verify and decode the token
           const decoded = jwtDecode<any>(storedToken)
-
-          // Check if token is expired
           const currentTime = Date.now() / 1000
           if (decoded.exp && decoded.exp < currentTime) {
-            // Token is expired
             localStorage.removeItem("shoptube-token")
             setUser(null)
             setToken(null)
           } else {
-            // Token is valid
             setUser({
               id: decoded.sub,
               name: decoded.name,
@@ -81,10 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await loginUser(formData)
 
       if (result.success && result.token && result.user) {
-        // Store token in localStorage for client-side auth
         localStorage.setItem("shoptube-token", result.token)
-
-        // Set user and token in state
         setUser({
           id: result.user.id,
           name: result.user.name,
@@ -93,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
         setToken(result.token)
 
-        // Redirect based on user role
         if (result.user.role === "admin") {
           router.push("/admin/dashboard")
         } else if (result.user.role === "seller") {
@@ -120,12 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signupUser(formData)
 
       if (result.success) {
-        // Only store token and set user if not a seller application
         if (result.token && result.user) {
-          // Store token in localStorage for client-side auth
           localStorage.setItem("shoptube-token", result.token)
-
-          // Set user and token in state
           setUser({
             id: result.user.id,
             name: result.user.name,
@@ -134,14 +120,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           setToken(result.token)
 
-          // Redirect based on user role
           if (result.user.role === "admin") {
             router.push("/admin/dashboard")
           } else if (result.user.role === "customer") {
             router.push("/customer/dashboard")
           }
         } else {
-          // For seller applications, redirect to a thank you page
           router.push("/auth/application-submitted")
         }
 
@@ -162,16 +146,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("shoptube-token")
       setUser(null)
       setToken(null)
-
-      // Call the server action to clear the cookie
       await logoutUser()
-
-      // Handle the redirect on the client side
       router.push("/")
     } catch (error) {
       console.error("Logout error:", error)
     }
   }
 
-  return <AuthContext.Provider value={{ user, login, signup, logout, loading, token }}>{children}</AuthContext.Provider>
+  // Memoize the context value
+  const contextValue = useMemo(
+    () => ({ user, login, signup, logout, loading, token }),
+    [user, token, loading] // Only re-compute when these change
+  )
+
+  console.log("AuthProvider context value:", contextValue)
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }

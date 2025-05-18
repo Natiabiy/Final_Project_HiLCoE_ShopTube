@@ -65,10 +65,10 @@ export default function CustomerWishlist() {
     }
   }, [wishlistItems, loadingWishlist])
 
-  useEffect(() => {
-    // Refresh wishlist when component mounts
-    refreshWishlist()
-  }, [refreshWishlist])
+  // useEffect(() => {
+  //   // Refresh wishlist when component mounts
+  //   refreshWishlist()
+  // }, [refreshWishlist])
 
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>

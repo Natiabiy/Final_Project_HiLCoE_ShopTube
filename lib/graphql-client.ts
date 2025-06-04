@@ -1,7 +1,5 @@
 import { GraphQLClient, gql } from "graphql-request"
 
-
-
 // Re-export gql for use in other files
 export { gql }
 
@@ -620,7 +618,6 @@ query GetUserCart($userId: uuid!) {
 }
 `
 
-
 export const ADD_TO_CART = gql`
   mutation AddToCart($userId: uuid!, $productId: uuid!, $quantity: Int!) {
     insert_cart_items_one(object: {customer_id: $userId, product_id: $productId, quantity: $quantity}) {
@@ -689,7 +686,6 @@ export const REMOVE_FROM_WISHLIST = gql`
   }
 `
 
-
 // Add this query to your existing GraphQL client file
 export const GET_ORDER_BY_ID = gql`
   query GetOrderById($orderId: uuid!, $userId: uuid!) {
@@ -738,3 +734,68 @@ export const GET_ORDER_BY_ID = gql`
 //     }
 //   }
 // `
+
+// Notification queries
+export const GET_USER_NOTIFICATIONS = gql`
+  query GetUserNotifications($userId: uuid!, $limit: Int, $offset: Int) {
+    notifications(
+      where: {user_id: {_eq: $userId}}
+      order_by: {created_at: desc}
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      title
+      message
+      type
+      is_read
+      created_at
+      product_id
+      seller_id
+      product {
+        id
+        name
+        image_url
+      }
+      seller {
+        id
+        name
+      }
+    }
+  }
+`
+
+export const GET_UNREAD_NOTIFICATIONS_COUNT = gql`
+  query GetUnreadNotificationsCount($userId: uuid!) {
+    notifications_aggregate(
+      where: {user_id: {_eq: $userId}, is_read: {_eq: false}}
+    ) {
+      aggregate {
+        count
+      }
+    }
+  }
+`
+
+export const MARK_NOTIFICATION_AS_READ = gql`
+  mutation MarkNotificationAsRead($notificationId: uuid!) {
+    update_notifications_by_pk(
+      pk_columns: {id: $notificationId}
+      _set: {is_read: true}
+    ) {
+      id
+      is_read
+    }
+  }
+`
+
+export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
+  mutation MarkAllNotificationsAsRead($userId: uuid!) {
+    update_notifications(
+      where: {user_id: {_eq: $userId}, is_read: {_eq: false}}
+      _set: {is_read: true}
+    ) {
+      affected_rows
+    }
+  }
+`

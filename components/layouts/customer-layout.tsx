@@ -3,10 +3,11 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bell, Heart, Home, LogOut, Settings, ShoppingBag, ShoppingCart, Store } from "lucide-react"
+import { Heart, Home, LogOut, Settings, ShoppingBag, ShoppingCart, Store } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
 
 export function CustomerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -53,10 +54,7 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
           <span className="hidden md:inline-block">ShopTube</span>
         </Link>
         <div className="ml-auto flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+          <NotificationsDropdown />
           <Button variant="ghost" size="sm" onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout

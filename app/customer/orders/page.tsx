@@ -44,6 +44,13 @@ export default function CustomerOrders() {
     }
   }, [user])
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-ET", {
+      style: "currency",
+      currency: "ETB",
+    }).format(amount)
+  }
+
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>
   }
@@ -92,7 +99,7 @@ export default function CustomerOrders() {
                     <p className="text-sm text-muted-foreground">
                       {order.order_items?.length || 0} item{order.order_items?.length !== 1 ? "s" : ""}
                     </p>
-                    <p className="font-medium">Total: ${Number(order.total_amount).toFixed(2)}</p>
+                    <p className="font-medium">Total: {formatCurrency(Number(order.total_amount))}</p>
                   </div>
                   <div className="space-y-3">
                     {order.order_items?.map((item: any) => (
@@ -105,7 +112,7 @@ export default function CustomerOrders() {
                           <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${Number(item.price_per_unit).toFixed(2)}</p>
+                          <p className="font-medium">{formatCurrency(Number(item.price_per_unit))}</p>
                         </div>
                       </div>
                     ))}

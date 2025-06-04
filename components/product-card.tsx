@@ -143,7 +143,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
-            <p className="mt-2 text-lg font-bold">${product.price.toFixed(2)}</p>
+            <p className="mt-2 text-lg font-bold">ETB {product.price.toFixed(2)}</p>
           </CardContent>
         </Link>
 

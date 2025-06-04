@@ -175,6 +175,13 @@ export default function CustomerCartPage() {
     return cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0)
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-ET", {
+      style: "currency",
+      currency: "ETB",
+    }).format(amount)
+  }
+
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>
   }
@@ -232,7 +239,7 @@ export default function CustomerCartPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">${item.product.price.toFixed(2)}</p>
+                            <p className="font-medium">{formatCurrency(item.product.price)}</p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-4">
@@ -296,7 +303,7 @@ export default function CustomerCartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal ({cartItems.length} items)</span>
-                  <span>${calculateSubtotal().toFixed(2)}</span>
+                  <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -305,7 +312,7 @@ export default function CustomerCartPage() {
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${calculateSubtotal().toFixed(2)}</span>
+                  <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">

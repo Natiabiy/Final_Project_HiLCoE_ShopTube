@@ -172,6 +172,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     }
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-ET", {
+      style: "currency",
+      currency: "ETB",
+    }).format(amount)
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -241,7 +248,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
         <div className="space-y-4">
           <h1 className="text-3xl font-bold">{product.name}</h1>
-          <p className="text-xl font-semibold">${product.price.toFixed(2)}</p>
+          <p className="text-xl font-semibold">{formatCurrency(product.price)}</p>
 
           <div>
             <p className="text-sm text-muted-foreground">

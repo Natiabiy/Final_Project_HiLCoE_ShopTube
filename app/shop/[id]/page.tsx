@@ -243,7 +243,7 @@ export default function ShopPage() {
                       </Link>
                       <CardContent>
                         <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                        <p className="mt-2 text-lg font-bold">${product.price.toFixed(2)}</p>
+                        <p className="mt-2 text-lg font-bold">ETB {product.price.toFixed(2)}</p>
                       </CardContent>
                       <CardFooter>
                         <Button className="w-full" disabled={product.stock <= 0}>

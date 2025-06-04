@@ -108,6 +108,13 @@ export default function CheckoutPage() {
     return cartItems.reduce((total, item: any) => total + item.product.price * item.quantity, 0)
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-ET", {
+      style: "currency",
+      currency: "ETB",
+    }).format(amount)
+  }
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -310,7 +317,9 @@ export default function CheckoutPage() {
                             <p className="text-sm font-medium truncate">{item.product.name}</p>
                             <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                           </div>
-                          <div className="text-sm font-medium">${(item.product.price * item.quantity).toFixed(2)}</div>
+                          <div className="text-sm font-medium">
+                            {formatCurrency(item.product.price * item.quantity)}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -320,7 +329,7 @@ export default function CheckoutPage() {
                     <div className="space-y-1">
                       <div className="flex justify-between">
                         <span>Subtotal</span>
-                        <span>${calculateSubtotal().toFixed(2)}</span>
+                        <span>{formatCurrency(calculateSubtotal())}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Shipping</span>
@@ -332,7 +341,7 @@ export default function CheckoutPage() {
 
                     <div className="flex justify-between font-bold">
                       <span>Total</span>
-                      <span>${calculateSubtotal().toFixed(2)}</span>
+                      <span>{formatCurrency(calculateSubtotal())}</span>
                     </div>
                   </>
                 )}

@@ -28,6 +28,13 @@ const ProductCard = ({ product }: { product: Product }) => {
   const businessName = product.seller?.seller_profile?.business_name || sellerName
   const sellerId = product.seller_id || ""
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-ET", {
+      style: "currency",
+      currency: "ETB",
+    }).format(amount)
+  }
+
   return (
     <Card className="overflow-hidden flex flex-col">
       {/* Product Image - Links to product detail */}
@@ -60,7 +67,7 @@ const ProductCard = ({ product }: { product: Product }) => {
 
       <CardContent className="pb-2">
         <p className="text-sm text-gray-500 line-clamp-2">{product.description || "No description available"}</p>
-        <p className="mt-2 text-lg font-bold">${(product.price || 0).toFixed(2)}</p>
+        <p className="mt-2 text-lg font-bold">{formatCurrency(product.price || 0)}</p>
       </CardContent>
 
       <CardFooter className="flex justify-between mt-auto">

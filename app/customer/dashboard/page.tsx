@@ -207,7 +207,7 @@ export default function CustomerDashboard() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">${Number(order.total_amount).toFixed(2)}</p>
+                            <p className="font-medium">ETB {Number(order.total_amount).toFixed(2)}</p>
                             <p className="text-sm text-muted-foreground">{order.order_items?.length || 0} item(s)</p>
                           </div>
                         </div>
@@ -306,7 +306,7 @@ export default function CustomerDashboard() {
                             <div className="text-sm font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
                               {order.status}
                             </div>
-                            <div className="font-medium">${Number(order.total_amount).toFixed(2)}</div>
+                            <div className="font-medium">ETB {Number(order.total_amount).toFixed(2)}</div>
                           </div>
                         </div>
                         <div className="p-4 space-y-3">
@@ -318,7 +318,7 @@ export default function CustomerDashboard() {
                                 <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                               </div>
                               <div className="text-right">
-                                <p className="font-medium">${Number(item.price_per_unit).toFixed(2)}</p>
+                                <p className="font-medium">ETB {Number(item.price_per_unit).toFixed(2)}</p>
                               </div>
                             </div>
                           ))}

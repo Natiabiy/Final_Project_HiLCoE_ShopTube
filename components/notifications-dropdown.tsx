@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Bell, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,22 +16,22 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useNotifications } from "@/lib/hooks/use-notifications"
 import { formatDistanceToNow } from "date-fns"
+import { useRouter } from "next/navigation"
 
 export function NotificationsDropdown() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, refetch } = useNotifications()
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
+  const router = useRouter()
 
-  useEffect(() => {
-   // console.log("Dropdown open state:", open);
-    if (open) {
-       // console.log("Calling refetch...");
-      refetch()
-    }
-  }, [open, refetch])
-
-  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
+  const handleNotificationClick = async (notificationId: string, isRead: boolean, productId?: string) => {
     if (!isRead) {
       await markAsRead(notificationId)
+    }
+
+    // Redirect to product detail if productId exists
+    if (productId) {
+      router.push(`/product/${productId}`)
+      setOpen(false) // Close the dropdown
     }
   }
 
@@ -40,10 +40,9 @@ export function NotificationsDropdown() {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        {
- <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge
@@ -54,7 +53,7 @@ export function NotificationsDropdown() {
             </Badge>
           )}
           <span className="sr-only">Notifications</span>
-        </Button> }
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
@@ -75,7 +74,7 @@ export function NotificationsDropdown() {
               <DropdownMenuItem
                 key={notification.id}
                 className={`p-0 ${!notification.is_read ? "bg-muted/50" : ""}`}
-                onClick={() => handleNotificationClick(notification.id, notification.is_read)}
+                onClick={() => handleNotificationClick(notification.id, notification.is_read, notification.product_id)}
               >
                 <div className="flex w-full p-3">
                   <div className="flex-shrink-0 mr-3">

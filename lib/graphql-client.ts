@@ -355,6 +355,7 @@ export const GET_SELLER_ORDERS = gql`
       total_amount
       status
       created_at
+      customer_id
       order_items {
         id
         quantity

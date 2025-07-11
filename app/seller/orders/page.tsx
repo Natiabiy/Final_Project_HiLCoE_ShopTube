@@ -13,6 +13,8 @@ import { SellerLayout } from "@/components/layouts/seller-layout"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { getSellerOrders } from "./actions"
+import { updateOrderStatus } from "./actions"
+
 
 type OrderItem = {
   id: string
@@ -203,18 +205,33 @@ export default function SellerOrders() {
                           <TableCell>{order.customer_id.substring(0, 8)}</TableCell>
                           <TableCell>{order.order_items.length}</TableCell>
                           <TableCell>
-                            <div
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold
-                              ${order.status === "delivered" ? "bg-green-100 text-green-800" : ""}
-                              ${order.status === "shipped" ? "bg-blue-100 text-blue-800" : ""}
-                              ${order.status === "processing" ? "bg-yellow-100 text-yellow-800" : ""}
-                              ${order.status === "pending" ? "bg-gray-100 text-gray-800" : ""}
-                              ${order.status === "cancelled" ? "bg-red-100 text-red-800" : ""}
-                            `}
-                            >
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </div>
-                          </TableCell>
+  <Select
+    value={order.status}
+    onValueChange={async (newStatus) => {
+      const result = await updateOrderStatus(order.id, newStatus)
+
+      if (result.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
+        )
+        toast({ title: "Success", description: "Order status updated." })
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" })
+      }
+    }}
+  >
+    <SelectTrigger className="w-[140px] text-xs">
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="pending">Pending</SelectItem>
+      <SelectItem value="processing">Processing</SelectItem>
+      <SelectItem value="shipped">Shipped</SelectItem>
+      <SelectItem value="delivered">Delivered</SelectItem>
+      <SelectItem value="cancelled">Cancelled</SelectItem>
+    </SelectContent>
+  </Select>
+</TableCell>
                           <TableCell className="text-right">{formatCurrency(order.total_amount)}</TableCell>
                         </TableRow>
                       ))}

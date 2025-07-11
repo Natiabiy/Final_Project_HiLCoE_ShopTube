@@ -800,3 +800,14 @@ export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
     }
   }
 `
+
+// grapgQL mutation for seller to update the status of an order
+
+export const UPDATE_ORDER_STATUS = gql`
+  mutation UpdateOrderStatus($orderId: uuid!, $status: String!) {
+    update_orders_by_pk(pk_columns: { id: $orderId }, _set: { status: $status }) {
+      id
+      status
+    }
+  }
+`

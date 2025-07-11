@@ -23,6 +23,11 @@ const GET_SELLER_WITH_PRODUCTS = gql`
       image_url
       created_at
     }
+    subscriptions_aggregate(where: {seller_id: {_eq: $sellerId}}) {
+      aggregate {
+        count
+      }
+    }
   }
 `
 
@@ -44,6 +49,7 @@ export async function getSellerWithProducts(sellerId: string) {
         description: "",
       },
       products: result.products || [],
+      subscriber_count: result.subscriptions_aggregate.aggregate.count || 0,
     }
 
     return { success: true, seller }

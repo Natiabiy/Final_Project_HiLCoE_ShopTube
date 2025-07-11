@@ -30,7 +30,7 @@ type Order = {
   total_amount: number
   status: string
   created_at: string
-  user_id: string
+  customer_id: string
   order_items: OrderItem[]
 }
 
@@ -91,7 +91,7 @@ export default function SellerOrders() {
     const filtered = orders.filter((order) => {
       const matchesSearch =
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.user_id.toLowerCase().includes(searchTerm.toLowerCase())
+        order.customer_id.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesStatus = statusFilter === "all" || order.status === statusFilter
 
@@ -200,7 +200,7 @@ export default function SellerOrders() {
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">#{order.id.substring(0, 8)}</TableCell>
                           <TableCell>{formatDate(order.created_at)}</TableCell>
-                          <TableCell>{order.user_id.substring(0, 8)}</TableCell>
+                          <TableCell>{order.customer_id.substring(0, 8)}</TableCell>
                           <TableCell>{order.order_items.length}</TableCell>
                           <TableCell>
                             <div

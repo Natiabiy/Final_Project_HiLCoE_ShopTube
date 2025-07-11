@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Bell, BellOff, ShoppingCart } from "lucide-react"
+import { ArrowLeft, Bell, BellOff, ShoppingCart, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { useToast } from "@/hooks/use-toast"
@@ -37,6 +38,7 @@ type Seller = {
   name: string
   seller_profile: SellerProfile
   products: Product[]
+  subscriber_count: number
 }
 
 export default function ShopPage() {
@@ -103,6 +105,8 @@ export default function ShopPage() {
 
         if (result.success) {
           setIsSubscribed(false)
+          // Update the subscriber count locally
+          setSeller((prev) => (prev ? { ...prev, subscriber_count: prev.subscriber_count - 1 } : null))
           toast({
             title: "Unsubscribed",
             description: `You have unsubscribed from ${seller.seller_profile.business_name}`,
@@ -119,6 +123,8 @@ export default function ShopPage() {
 
         if (result.success) {
           setIsSubscribed(true)
+          // Update the subscriber count locally
+          setSeller((prev) => (prev ? { ...prev, subscriber_count: prev.subscriber_count + 1 } : null))
           toast({
             title: "Subscribed",
             description: `You are now subscribed to ${seller.seller_profile.business_name}`,
@@ -173,7 +179,13 @@ export default function ShopPage() {
               </Link>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold">{seller.seller_profile.business_name}</h1>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl font-bold">{seller.seller_profile.business_name}</h1>
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {seller.subscriber_count} {seller.subscriber_count === 1 ? "subscriber" : "subscribers"}
+                    </Badge>
+                  </div>
                   <p className="text-muted-foreground mt-1">By {seller.name}</p>
                 </div>
                 {user && user.role === "customer" && (
@@ -243,7 +255,7 @@ export default function ShopPage() {
                       </Link>
                       <CardContent>
                         <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                        <p className="mt-2 text-lg font-bold">ETB {product.price.toFixed(2)}</p>
+                        <p className="mt-2 text-lg font-bold">${product.price.toFixed(2)}</p>
                       </CardContent>
                       <CardFooter>
                         <Button className="w-full" disabled={product.stock <= 0}>

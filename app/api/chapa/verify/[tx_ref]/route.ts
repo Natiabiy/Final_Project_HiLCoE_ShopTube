@@ -30,10 +30,10 @@ const CREATE_ORDER = gql`
 `;
 
 interface CreateOrderResponse {
-    insert_orders_one: {
-      id: string;
-    };
-  }
+  insert_orders_one: {
+    id: string;
+  };
+}
 
 export async function GET(
   request: Request,
@@ -42,6 +42,7 @@ export async function GET(
   const { tx_ref } = await context.params;
 
   try {
+    // 1. Verify payment with Chapa
     const chapaRes = await fetch(
       `https://api.chapa.co/v1/transaction/verify/${tx_ref}`,
       {
@@ -53,8 +54,10 @@ export async function GET(
       }
     );
 
-    const { data, status } = await chapaRes.json();
-    console.log("📋 Full Chapa response:", data); // Debug full response
+    const chapaJson = await chapaRes.json();
+    const { data, status } = chapaJson;
+
+    console.log("📋 Full Chapa response:", data);
 
     if (status !== "success" || data.status !== "success") {
       return NextResponse.json(
@@ -63,11 +66,21 @@ export async function GET(
       );
     }
 
+    // 2. Extract metadata and parse order_items_json
     const customerId = data.metadata?.user_id;
     const totalAmount = parseFloat(data.amount);
     const shippingAddress = data.metadata?.shipping_address;
-    const orderItemsRaw = JSON.parse(data.metadata?.order_items_json || "[]");
+    let orderItemsRaw: any[] = [];
 
+    try {
+      orderItemsRaw = JSON.parse(data.metadata?.order_items_json || "[]");
+    } catch (e) {
+      console.error("❌ Failed to parse order_items_json:", e);
+      return NextResponse.json(
+        { success: false, message: "Invalid order_items_json format." },
+        { status: 400 }
+      );
+    }
 
     console.log("🔍 Raw metadata:", {
       customerId,
@@ -76,23 +89,32 @@ export async function GET(
       orderItemsRaw,
     });
 
-    if (!customerId || !totalAmount || !shippingAddress || !Array.isArray(orderItemsRaw)) {
+    // 3. Validate required metadata
+    if (
+      !customerId ||
+      !totalAmount ||
+      !shippingAddress ||
+      !Array.isArray(orderItemsRaw) ||
+      orderItemsRaw.length === 0
+    ) {
       return NextResponse.json(
         { success: false, message: "Missing or invalid metadata." },
         { status: 400 }
       );
     }
 
+    // 4. Map order items to database schema
     const orderItems = orderItemsRaw.map((item: any) => ({
       product_id: item.product_id,
       quantity: item.quantity,
-      price_per_unit: item.price, // Changed to match database schema
+      price_per_unit: item.price,
     }));
 
+    // 5. Create order in Hasura
     const variables = {
       customerId,
       totalAmount,
-      status: "pending",
+      status: "pending", // or "completed" depending on your workflow
       shippingAddress,
       orderItems,
     };
@@ -104,6 +126,7 @@ export async function GET(
 
     console.log("✅ Order created:", result);
 
+    // 6. Return success response
     return NextResponse.json({
       success: true,
       message: "Payment verified and order created.",

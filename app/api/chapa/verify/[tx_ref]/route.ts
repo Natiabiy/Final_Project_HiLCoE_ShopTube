@@ -1,39 +1,26 @@
 import { NextResponse } from "next/server";
 import { gql, GraphQLClient } from "graphql-request";
 
-const graphqlClient = new GraphQLClient(process.env.HASURA_GRAPHQL_ENDPOINT!, {
-  headers: {
-    "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET!,
-  },
-});
+// Initialize the GraphQL client with Hasura endpoint using environment variables
+const HASURA_ENDPOINT = process.env.NEXT_PUBLIC_HASURA_ENDPOINT || ""
+const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET || ""
 
-const CREATE_ORDER = gql`
-  mutation CreateOrder(
-    $customerId: uuid!
-    $totalAmount: numeric!
-    $status: String!
-    $shippingAddress: String!
-    $orderItems: [order_items_insert_input!]!
-  ) {
-    insert_orders_one(
-      object: {
-        customer_id: $customerId
-        total_amount: $totalAmount
-        status: $status
-        shipping_address: $shippingAddress
-        order_items: { data: $orderItems }
-      }
+// Create a GraphQL client instance for admin requests (server-side only)
+export const adminClient = new GraphQLClient(HASURA_ENDPOINT, {
+  headers: {
+    "x-hasura-admin-secret": HASURA_ADMIN_SECRET,
+  },
+})
+const UPDATE_ORDER_STATUS = gql`
+  mutation UpdateOrderStatus($txRef: String!, $status: String!) {
+    update_orders(
+      where: { tx_ref: { _eq: $txRef } }
+      _set: { status: $status }
     ) {
-      id
+      affected_rows
     }
   }
 `;
-
-interface CreateOrderResponse {
-  insert_orders_one: {
-    id: string;
-  };
-}
 
 export async function GET(
   request: Request,
@@ -42,101 +29,30 @@ export async function GET(
   const { tx_ref } = await context.params;
 
   try {
-    // 1. Verify payment with Chapa
-    const chapaRes = await fetch(
-      `https://api.chapa.co/v1/transaction/verify/${tx_ref}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // 1. Verify payment with Chapa API
+    const chapaRes = await fetch(`https://api.chapa.co/v1/transaction/verify/${tx_ref}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-    const chapaJson = await chapaRes.json();
-    const { data, status } = chapaJson;
-
-    console.log("📋 Full Chapa response:", data);
+    const { data, status } = await chapaRes.json();
 
     if (status !== "success" || data.status !== "success") {
-      return NextResponse.json(
-        { success: false, message: "Payment verification failed." },
-        { status: 400 }
-      );
+      // Mark order as failed or keep pending as you see fit
+      await graphqlClient.request(UPDATE_ORDER_STATUS, { txRef: tx_ref, status: "failed" });
+
+      return NextResponse.json({ success: false, message: "Payment verification failed." }, { status: 400 });
     }
 
-    // 2. Extract metadata and parse order_items_json
-    const customerId = data.metadata?.user_id;
-    const totalAmount = parseFloat(data.amount);
-    const shippingAddress = data.metadata?.shipping_address;
-    let orderItemsRaw: any[] = [];
+    // 2. Payment successful — update order status to pending/completed
+    await graphqlClient.request(UPDATE_ORDER_STATUS, { txRef: tx_ref, status: "pending" });
 
-    try {
-      orderItemsRaw = JSON.parse(data.metadata?.order_items_json || "[]");
-    } catch (e) {
-      console.error("❌ Failed to parse order_items_json:", e);
-      return NextResponse.json(
-        { success: false, message: "Invalid order_items_json format." },
-        { status: 400 }
-      );
-    }
-
-    console.log("🔍 Raw metadata:", {
-      customerId,
-      totalAmount,
-      shippingAddress,
-      orderItemsRaw,
-    });
-
-    // 3. Validate required metadata
-    if (
-      !customerId ||
-      !totalAmount ||
-      !shippingAddress ||
-      !Array.isArray(orderItemsRaw) ||
-      orderItemsRaw.length === 0
-    ) {
-      return NextResponse.json(
-        { success: false, message: "Missing or invalid metadata." },
-        { status: 400 }
-      );
-    }
-
-    // 4. Map order items to database schema
-    const orderItems = orderItemsRaw.map((item: any) => ({
-      product_id: item.product_id,
-      quantity: item.quantity,
-      price_per_unit: item.price,
-    }));
-
-    // 5. Create order in Hasura
-    const variables = {
-      customerId,
-      totalAmount,
-      status: "pending", // or "completed" depending on your workflow
-      shippingAddress,
-      orderItems,
-    };
-
-    const result = await graphqlClient.request<CreateOrderResponse>(
-      CREATE_ORDER,
-      variables
-    );
-
-    console.log("✅ Order created:", result);
-
-    // 6. Return success response
-    return NextResponse.json({
-      success: true,
-      message: "Payment verified and order created.",
-      orderId: result.insert_orders_one.id,
-    });
-  } catch (error: any) {
-    console.error("❌ Verification or order creation error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error." },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, message: "Payment verified and order updated." });
+  } catch (error) {
+    console.error("Verification error:", error);
+    return NextResponse.json({ success: false, message: "Internal server error." }, { status: 500 });
   }
 }

@@ -6,7 +6,14 @@ import Link from "next/link"
 import { CheckCircle, ChevronLeft, Package } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CustomerLayout } from "@/components/layouts/customer-layout"
@@ -18,17 +25,54 @@ export default function OrderConfirmationPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+
   const [orderDetails, setOrderDetails] = useState<any>(null)
   const [loadingOrder, setLoadingOrder] = useState(true)
 
   const orderId = searchParams.get("orderId")
+  const txRef = searchParams.get("tx_ref")
 
+  // Redirect if user is not logged in
   useEffect(() => {
     if (!loading && (!user || user.role !== "customer")) {
       router.push("/auth/login")
     }
   }, [user, loading, router])
 
+  // 🔄 Verify Chapa payment and create order if tx_ref exists and no orderId yet
+  useEffect(() => {
+    const handleOrderCreation = async () => {
+      try {
+        const response = await fetch(`/api/chapa/verify/${txRef}`)
+        const data = await response.json()
+
+        if (data.success && data.orderId) {
+          router.replace(`/customer/order-confirmation?orderId=${data.orderId}`)
+        } else {
+          toast({
+            title: "Order Error",
+            description: data.error || "Failed to verify payment",
+            variant: "destructive",
+          })
+          router.push("/customer/orders")
+        }
+      } catch (err) {
+        console.error("Order creation error:", err)
+        toast({
+          title: "Unexpected Error",
+          description: "Could not verify payment or create order.",
+          variant: "destructive",
+        })
+        router.push("/customer/orders")
+      }
+    }
+
+    if (user && txRef && !orderId) {
+      handleOrderCreation()
+    }
+  }, [user, txRef, orderId, router, toast])
+
+  // Fetch order details if orderId is present
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (!orderId || !user?.id) return
@@ -60,7 +104,7 @@ export default function OrderConfirmationPage() {
       }
     }
 
-    if (user) {
+    if (user && orderId) {
       fetchOrderDetails()
     }
   }, [orderId, user, toast, router])
@@ -121,7 +165,9 @@ export default function OrderConfirmationPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Total</p>
-                      <p className="text-lg font-bold">${orderDetails?.total_amount?.toFixed(2) || "0.00"}</p>
+                      <p className="text-lg font-bold">
+                        ${orderDetails?.total_amount?.toFixed(2) || "0.00"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -130,11 +176,14 @@ export default function OrderConfirmationPage() {
                   <h3 className="mb-2 font-medium">Order Items</h3>
                   <div className="space-y-3">
                     {orderDetails?.order_items?.map((item: any) => (
-                      <div key={item.id} className="flex items-center gap-3 rounded-lg border p-3">
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 rounded-lg border p-3"
+                      >
                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
                           {item.product.image_url ? (
                             <img
-                              src={item.product.image_url || "/placeholder.svg"}
+                              src={item.product.image_url}
                               alt={item.product.name}
                               className="h-full w-full object-cover"
                             />
@@ -151,7 +200,9 @@ export default function OrderConfirmationPage() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${(item.quantity * item.price_per_unit).toFixed(2)}</p>
+                          <p className="font-medium">
+                            ${(item.quantity * item.price_per_unit).toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     ))}

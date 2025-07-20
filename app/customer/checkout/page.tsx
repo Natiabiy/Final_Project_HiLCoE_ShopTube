@@ -118,11 +118,9 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
-
-    // Validate form
+  
     const requiredFields = ["fullName", "email", "address", "city", "state", "zipCode", "country"]
     const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData])
-
     if (missingFields.length > 0) {
       toast({
         title: "Missing Information",
@@ -131,48 +129,54 @@ export default function CheckoutPage() {
       })
       return
     }
-
+  
     setProcessingOrder(true)
+  
     try {
-      // Format shipping address
-      const shippingAddress = `${formData.fullName}, ${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}, ${formData.country}${
-        formData.phoneNumber ? `, Phone: ${formData.phoneNumber}` : ""
-      }`
-
-      // Format order items
-      const orderItems = cartItems.map((item: any) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price_per_unit: item.product.price,
-      }))
-
-      const result = await createOrder(user.id, calculateSubtotal(), shippingAddress, orderItems)
-
-      if (result.success) {
-        // Clear the cart after successful order
-        await clearCart(user.id)
-
-        // Redirect to order confirmation
-        router.push(`/customer/order-confirmation?orderId=${result.orderId}`)
+      const response = await fetch("/api/chapa", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          fullName: formData.fullName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          address: `${formData.fullName}, ${formData.address}, ${formData.city}, ${formData.state}, ${formData.zipCode}, ${formData.country}`,
+          totalAmount: calculateSubtotal(),
+          cartItems: cartItems.map((item: any) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price_per_unit: item.product.price,
+          })),
+        }),
+      })
+  
+      const data = await response.json()
+  
+      if (data.success) {
+        // Redirect to Chapa payment page
+        window.location.href = data.checkout_url
       } else {
         toast({
-          title: "Error",
-          description: result.error,
+          title: "Payment Error",
+          description: data.error || "Failed to initiate payment",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error placing order:", error)
+      console.error(error)
       toast({
         title: "Error",
-        description: "An unexpected error occurred while placing your order",
+        description: "Could not connect to payment gateway",
         variant: "destructive",
       })
     } finally {
       setProcessingOrder(false)
     }
   }
-
+  
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>
   }

@@ -44,24 +44,18 @@ export async function loginUser(formData: FormData) {
       }
     }
 
-    // Create JWT payload with Hasura claims
-    const tokenPayload = {
-      sub: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      ...createHasuraClaims(user),
-    }
-
     const token = await generateToken(user)
 
-    cookies().set({
+    // Await cookies() before setting
+    const cookieStore = await cookies()
+    cookieStore.set({
       name: "auth-token",
       value: token,
       httpOnly: true,
       path: "/",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
     })
 
     return {
@@ -120,25 +114,18 @@ export async function signupUser(formData: FormData) {
     // Only create token if user is not a seller
     let token: string | null = null
     if (role !== "seller") {
-      const tokenPayload = {
-        sub: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        ...createHasuraClaims(user),
-      }
-
       token = await generateToken(user)
 
-      const cookieStore = await cookies();
+      const cookieStore = await cookies()
       cookieStore.set({
         name: "auth-token",
         value: token,
         httpOnly: true,
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24, // 1 day
-      });
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: "lax",
+      })
     }
 
     return {
@@ -162,6 +149,7 @@ export async function signupUser(formData: FormData) {
 }
 
 export async function logoutUser() {
-  cookies().delete("auth-token")
+  const cookieStore = await cookies()
+  cookieStore.delete("auth-token", { path: "/" })
   return { success: true }
 }

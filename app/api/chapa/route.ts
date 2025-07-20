@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
       last_name: fullName.split(" ").slice(1).join(" ") || "-",
       phone_number: phoneNumber || "0910000000",
       tx_ref,
-      callback_url,
-      return_url: `${BASE_URL}/customer/order-confirmation?tx_ref=${tx_ref}`,
+      callback_url: `https://final-project-hi-l-co-e-shop-tube.vercel.app/api/chapa/verify/${tx_ref}`,
+      return_url: `https://final-project-hi-l-co-e-shop-tube.vercel.app/customer/order-confirmation?tx_ref=${tx_ref}`,
       customization: {
         title: "ShopTube Payment",
         description: "Pay for your order",

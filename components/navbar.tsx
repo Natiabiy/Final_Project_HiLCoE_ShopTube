@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Menu, ShoppingCart, Heart, User, LogOut } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import { useWishlist } from "@/lib/hooks/use-wishlist"
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter() // Add useRouter for programmatic navigation
   const { user, logout } = useAuth()
   const { wishlistItems } = useWishlist()
   const { getCartItemCount } = useCart()
@@ -41,6 +42,16 @@ export function Navbar() {
     return pathname === path
   }
 
+  // Handler for protected links
+  const handleProtectedLink = (e: React.MouseEvent, path: string) => {
+    e.preventDefault()
+    if (!user) {
+      router.push("/auth/login")
+    } else {
+      router.push(path)
+    }
+  }
+
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b ${
@@ -62,22 +73,24 @@ export function Navbar() {
             >
               Home
             </Link>
-            <Link
+            <a
               href="/marketplace"
+              onClick={(e) => handleProtectedLink(e, "/marketplace")}
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActive("/marketplace") ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               Marketplace
-            </Link>
-            <Link
+            </a>
+            <a
               href="/explore"
+              onClick={(e) => handleProtectedLink(e, "/explore")}
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActive("/explore") ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               Explore
-            </Link>
+            </a>
           </nav>
         </div>
 
@@ -160,22 +173,24 @@ export function Navbar() {
                 >
                   Home
                 </Link>
-                <Link
+                <a
                   href="/marketplace"
+                  onClick={(e) => handleProtectedLink(e, "/marketplace")}
                   className={`text-sm font-medium transition-colors hover:text-primary ${
                     isActive("/marketplace") ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
                   Marketplace
-                </Link>
-                <Link
+                </a>
+                <a
                   href="/explore"
+                  onClick={(e) => handleProtectedLink(e, "/explore")}
                   className={`text-sm font-medium transition-colors hover:text-primary ${
                     isActive("/explore") ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
                   Explore
-                </Link>
+                </a>
 
                 {user ? (
                   <>

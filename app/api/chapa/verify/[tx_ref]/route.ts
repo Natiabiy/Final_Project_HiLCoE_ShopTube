@@ -6,7 +6,7 @@ const HASURA_ENDPOINT = process.env.NEXT_PUBLIC_HASURA_ENDPOINT || ""
 const HASURA_ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET || ""
 
 // Create a GraphQL client instance for admin requests (server-side only)
-export const adminClient = new GraphQLClient(HASURA_ENDPOINT, {
+export const graphqlClient = new GraphQLClient(HASURA_ENDPOINT, {
   headers: {
     "x-hasura-admin-secret": HASURA_ADMIN_SECRET,
   },
